@@ -20,7 +20,7 @@ if __name__ == '__main__':
     with open(sys.argv[2], 'rb') as handle:
         data = pickle.load(handle)
 
-    model = Top2Vec(documents=data, embedding_model='universal-sentence-encoder')
+    model = Top2Vec(documents=data, embedding_model='universal-sentence-encoder', embedding_model_path=sys.argv[3])
 
 
     model.save(sys.argv[1])
