@@ -413,7 +413,7 @@ public class LabeledDataAnalyser {
                 int total_of_user = author_total.get(u);
                 int totalfake_of_user=author_fake.getOrDefault(u,0);
                 double perc = (double) totalfake_of_user /total_of_user;
-                String[] row = {u, String.valueOf(total_of_user), String.valueOf(Precision.round(perc, 1))};
+                String[] row = {u, String.valueOf(total_of_user), String.valueOf(Precision.round(perc, 2))};
                 writer.writeNext(row);
                 count++;
                 if (count>=topn)
