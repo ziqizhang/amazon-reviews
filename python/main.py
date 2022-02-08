@@ -5,6 +5,8 @@
 from top2vec import Top2Vec
 from sklearn.datasets import fetch_20newsgroups
 import sys
+import pickle
+
 
 def print_hi(name):
     # Use a breakpoint in the code line below to debug your script.
@@ -14,8 +16,13 @@ def print_hi(name):
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    newsgroups = fetch_20newsgroups(subset='all', remove=('headers', 'footers', 'quotes'))
-    model = Top2Vec(documents=newsgroups.data, embedding_model='universal-sentence-encoder')
+    #newsgroups = fetch_20newsgroups(subset='all', remove=('headers', 'footers', 'quotes'))
+    with open(sys.argv[2], 'rb') as handle:
+        data = pickle.load(handle)
+
+    model = Top2Vec(documents=data, embedding_model='universal-sentence-encoder')
+
+
     model.save(sys.argv[1])
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
