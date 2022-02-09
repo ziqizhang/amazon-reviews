@@ -19,9 +19,11 @@ if __name__ == '__main__':
     out_folder=sys.argv[2]
     model_path=sys.argv[3]
 
+    print(">>>\t\tBeginning the process")
     for file in os.listdir(in_folder):
-        print("{} training for {}".format(datetime.datetime.now(), file))
+        print(">>>\t\t{} training for {}".format(datetime.datetime.now(), file))
         train_top2vec_model(in_folder+"/"+file, out_folder+"/topics_"+file, model_path)
+        print(">>>\t\tcompleted")
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
