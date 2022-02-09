@@ -29,7 +29,7 @@ if __name__ == '__main__':
     print(">>>\t\tTotal files={}".format(len(files)))
     files.sort()
     print(">>>\t\tBeginning the process")
-    for file in os.listdir(in_folder):
+    for file in files:
         print(">>>\t\t{} training for {}".format(datetime.datetime.now(), file))
         train_top2vec_model(in_folder+"/"+file, out_folder+"/topics_"+file, model_path)
         print(">>>\t\tcompleted")
