@@ -3,8 +3,14 @@
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 from top2vec import Top2Vec
-import sys, os, datetime
+import sys, os, datetime, logging
 
+
+logging.basicConfig(stream=sys.stdout,
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    level=logging.INFO,
+                    datefmt='%Y-%m-%d %H:%M:%S')
+log = logging.getLogger("top2vec")
 
 def train_top2vec_model(in_file, out_file, model_path):
     file = open(in_file, 'r')
@@ -19,11 +25,11 @@ if __name__ == '__main__':
     out_folder=sys.argv[2]
     model_path=sys.argv[3]
 
-    print(">>>\t\tBeginning the process")
+    log.info(">>>\t\tBeginning the process")
     for file in os.listdir(in_folder):
-        print(">>>\t\t{} training for {}".format(datetime.datetime.now(), file))
+        log.info(">>>\t\t{} training for {}".format(datetime.datetime.now(), file))
         train_top2vec_model(in_folder+"/"+file, out_folder+"/topics_"+file, model_path)
-        print(">>>\t\tcompleted")
+        log.info(">>>\t\tcompleted")
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
