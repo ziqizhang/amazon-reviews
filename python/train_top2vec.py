@@ -12,11 +12,23 @@ logging.basicConfig(stream=sys.stdout,
                     datefmt='%Y-%m-%d %H:%M:%S')
 log = logging.getLogger("top2vec")
 
-def train_top2vec_model(in_file, out_file, model_path):
+def train_top2vec_model(in_file, out_file, model_path, min_words=5, min_freq=20):
     file = open(in_file, 'r')
-    lines= file.readlines()
+    lines=[]
+
+    count_total=0
+    count_selected=0
+    for l in file:
+        count_total+=1
+        l=l.strip()
+        if len(l.split(" "))<min_words:
+            continue
+        count_selected+=1
+        lines.append(l)
+
+    print(">>>\t\t\ttotal lines={}, selected={}".format(count_total, count_selected))
     model = Top2Vec(documents=lines, embedding_model='universal-sentence-encoder', embedding_model_path=model_path,
-                    min_count=10)
+                    min_count=min_freq)
     model.save(out_file)
 
 # Press the green button in the gutter to run the script.
