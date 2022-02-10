@@ -2,6 +2,8 @@
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+import traceback
+
 from top2vec import Top2Vec
 import sys, os, datetime, logging
 
@@ -27,9 +29,12 @@ def train_top2vec_model(in_file, out_file, model_path, min_words=5, min_freq=20)
         lines.append(l)
 
     print(">>>\t\t\ttotal lines={}, selected={}".format(count_total, count_selected))
-    model = Top2Vec(documents=lines, embedding_model='universal-sentence-encoder', embedding_model_path=model_path,
+    try:
+        model = Top2Vec(documents=lines, embedding_model='universal-sentence-encoder', embedding_model_path=model_path,
                     min_count=min_freq)
-    model.save(out_file)
+        model.save(out_file)
+    except:
+        print(traceback.format_exc())
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
