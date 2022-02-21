@@ -4,7 +4,10 @@ import com.opencsv.*;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.util.Precision;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import uk.ac.shef.inf.Util;
 
 import java.io.*;
@@ -24,6 +27,42 @@ import java.util.*;
  * - a csv file containing distribution of fake/real over review length
  */
 public class LabeledDataAnalyser {
+
+    /**
+     * "label": 'Fake',  # not required
+     *         "mean":  5,  # not required
+     *         "med": 5.5,
+     *         "q1": 3.5,
+     *         "q3": 7.5,
+     *         # "cilo": 5.3 # not required
+     *         # "cihi": 5.7 # not required
+     *         "whislo": 2.0,  # required
+     *         "whishi": 8.0,  # required
+     * @param stats
+     * @param label
+     */
+    public JSONObject prepareJSONStringBoxplot(DescriptiveStatistics stats, String label){
+        JSONObject boxplot_stats = new JSONObject();
+        boxplot_stats.put("mean", Precision.round(stats.getMean(),1));
+        boxplot_stats.put("med", stats.getPercentile(0.5));
+        boxplot_stats.put("q1", stats.getPercentile(0.25));
+        boxplot_stats.put("q3", stats.getPercentile(0.75));
+        boxplot_stats.put("wishhi", stats.getMax());
+        boxplot_stats.put("wishlo",stats.getMin());
+        boxplot_stats.put("label",label);
+        return boxplot_stats;
+    }
+
+    public JSONObject prepareJSONStringCategory(DescriptiveStatistics fake,
+                                                DescriptiveStatistics real,
+                                                String category){
+        JSONObject pair = new JSONObject();
+        pair.put("fake", prepareJSONStringBoxplot(fake, "Fake"));
+        pair.put("real", prepareJSONStringBoxplot(real, "Real"));
+        JSONObject output = new JSONObject();
+        output.put(category, pair);
+        return output;
+    }
 
     public void analyse(String inFolder, String outFolder) throws IOException {
         Map<String, Integer> total=new HashMap<>();
@@ -88,11 +127,37 @@ public class LabeledDataAnalyser {
         List<String> files = Util.listFiles(inFolder);
         System.out.format("%s\tProcessing a total of %d files", new Date(), files.size());
 
+        String prev_datasource=null;
+        DescriptiveStatistics stats_rating_fake=new DescriptiveStatistics();
+        DescriptiveStatistics stats_rating_real=new DescriptiveStatistics();
+        DescriptiveStatistics stats_words_fake=new DescriptiveStatistics();
+        DescriptiveStatistics stats_words_real=new DescriptiveStatistics();
+
+        JSONArray rating_json=new JSONArray();
+        JSONArray words_json=new JSONArray();
+
         for (String f: files){
             if (!f.endsWith(".tar.gz"))
                 continue;
 
             String datasource = f.substring(0, f.indexOf("."));
+
+            //write descriptive stats
+            if (prev_datasource!=null && !prev_datasource.equalsIgnoreCase(datasource)){
+                System.out.format("\n%s\t\t  > reset descriptive stats", new Date());
+                JSONObject rating_data=prepareJSONStringCategory(stats_rating_fake, stats_rating_real, prev_datasource);
+                rating_json.add(rating_data);
+                JSONObject words_data=prepareJSONStringCategory(stats_words_fake, stats_words_real, prev_datasource);
+                words_json.add(words_data);
+
+                stats_rating_fake=new DescriptiveStatistics();
+                stats_rating_real=new DescriptiveStatistics();
+                stats_words_fake=new DescriptiveStatistics();
+                stats_words_real=new DescriptiveStatistics();
+                prev_datasource=datasource;
+            }
+            if (prev_datasource==null)
+                prev_datasource=datasource;
 
             Path source = Paths.get(inFolder+"/"+f);
             System.out.format("\n%s\t\tStarted %s", new Date(), source);
@@ -146,6 +211,14 @@ public class LabeledDataAnalyser {
                             String ath =arrays[6];
                             String review=arrays[2];
                             int words = review.split("\\s+").length;
+
+                            if (label.equalsIgnoreCase("cg")){
+                                stats_rating_fake.addValue(Double.parseDouble(arrays[1]));
+                                stats_words_fake.addValue(words);
+                            }else{
+                                stats_rating_real.addValue(Double.parseDouble(arrays[1]));
+                                stats_words_real.addValue(words);
+                            }
 
                             int freq = total.getOrDefault(datasource, 0);
                             total.put(datasource, freq + 1);
@@ -397,6 +470,19 @@ public class LabeledDataAnalyser {
         }
 
         System.out.format("\n%s\tAll completed, saving data", new Date());
+
+        //descriptive stats
+        JSONObject rating_data=prepareJSONStringCategory(stats_rating_fake, stats_rating_real, prev_datasource);
+        rating_json.add(rating_data);
+        JSONObject words_data=prepareJSONStringCategory(stats_words_fake, stats_words_real, prev_datasource);
+        words_json.add(words_data);
+        FileWriter jsonwriter_rating = new FileWriter(outFolder+"/stats_descriptive_rating.json");
+        jsonwriter_rating.write(rating_json.toJSONString());
+        jsonwriter_rating.close();
+        FileWriter jsonwriter_words = new FileWriter(outFolder+"/stats_descriptive_words.json");
+        jsonwriter_words.write(words_json.toJSONString());
+        jsonwriter_words.close();
+
         File file = new File(outFolder+"/stats.csv");
         File file_dist_rating = new File(outFolder+"/stats_dist_rating.csv");
         File file_dist_words = new File(outFolder+"/stats_dist_words.csv");
@@ -519,22 +605,22 @@ public class LabeledDataAnalyser {
 
                 String[] row = { k,
                         String.valueOf(total_freq),
-                        String.valueOf(Precision.round(percent_fake,2)), String.valueOf(Precision.round(percent_real,2)),
-                        String.valueOf(Precision.round(percent_verified,2)), String.valueOf(Precision.round(percent_nonverified,2)),
-                        String.valueOf(Precision.round(percent_rating0,2)),
-                        String.valueOf(Precision.round(percent_rating1,2)),
-                        String.valueOf(Precision.round(percent_rating2,2)),
-                        String.valueOf(Precision.round(percent_rating3,2)),
-                        String.valueOf(Precision.round(percent_rating4,2)),
-                        String.valueOf(Precision.round(percent_rating5,2)),
-                        String.valueOf(Precision.round(percent_fov,2)),String.valueOf(Precision.round(percent_rov,2)),
-                        String.valueOf(Precision.round(percent_fonv,2)),String.valueOf(Precision.round(percent_ronv,2)),
-                        String.valueOf(Precision.round(percent_fo0,2)),String.valueOf(Precision.round(percent_ro0,2)),
-                        String.valueOf(Precision.round(percent_fo1,2)),String.valueOf(Precision.round(percent_ro1,2)),
-                        String.valueOf(Precision.round(percent_fo2,2)),String.valueOf(Precision.round(percent_ro2,2)),
-                        String.valueOf(Precision.round(percent_fo3,2)),String.valueOf(Precision.round(percent_ro3,2)),
-                        String.valueOf(Precision.round(percent_fo4,2)),String.valueOf(Precision.round(percent_ro4,2)),
-                        String.valueOf(Precision.round(percent_fo5,2)),String.valueOf(Precision.round(percent_ro5,2))
+                        String.valueOf(Precision.round(percent_fake,3)), String.valueOf(Precision.round(percent_real,3)),
+                        String.valueOf(Precision.round(percent_verified,3)), String.valueOf(Precision.round(percent_nonverified,3)),
+                        String.valueOf(Precision.round(percent_rating0,3)),
+                        String.valueOf(Precision.round(percent_rating1,3)),
+                        String.valueOf(Precision.round(percent_rating2,3)),
+                        String.valueOf(Precision.round(percent_rating3,3)),
+                        String.valueOf(Precision.round(percent_rating4,3)),
+                        String.valueOf(Precision.round(percent_rating5,3)),
+                        String.valueOf(Precision.round(percent_fov,3)),String.valueOf(Precision.round(percent_rov,3)),
+                        String.valueOf(Precision.round(percent_fonv,3)),String.valueOf(Precision.round(percent_ronv,3)),
+                        String.valueOf(Precision.round(percent_fo0,3)),String.valueOf(Precision.round(percent_ro0,3)),
+                        String.valueOf(Precision.round(percent_fo1,3)),String.valueOf(Precision.round(percent_ro1,3)),
+                        String.valueOf(Precision.round(percent_fo2,3)),String.valueOf(Precision.round(percent_ro2,3)),
+                        String.valueOf(Precision.round(percent_fo3,3)),String.valueOf(Precision.round(percent_ro3,3)),
+                        String.valueOf(Precision.round(percent_fo4,3)),String.valueOf(Precision.round(percent_ro4,3)),
+                        String.valueOf(Precision.round(percent_fo5,3)),String.valueOf(Precision.round(percent_ro5,3))
                     };
                 writer.writeNext(row);
 
@@ -550,16 +636,16 @@ public class LabeledDataAnalyser {
                 double percent_fo5_of_total =total_fake==0?0: (double)fake_of_5rating/total_fake;
                 double percent_ro5_of_total =total_real==0?0: (double)real_of_5rating/total_real;
 
-                String[] row_dist_rating_real={k+" Real",String.valueOf((int)percent_ro1_of_total)
-                        ,String.valueOf(Precision.round(percent_ro2_of_total,2)),
-                        String.valueOf(Precision.round(percent_ro3_of_total,2)),
-                        String.valueOf(Precision.round(percent_ro4_of_total,2)),
-                        String.valueOf(Precision.round(percent_ro5_of_total,2))};
-                String[] row_dist_rating_fake={k+ " Fake",String.valueOf(Precision.round(percent_fo1_of_total,2)),
-                        String.valueOf(Precision.round(percent_fo2_of_total,2)),
-                        String.valueOf(Precision.round(percent_fo3_of_total,2)),
-                        String.valueOf(Precision.round(percent_fo4_of_total,2)),
-                        String.valueOf(Precision.round(percent_fo5_of_total,2))};
+                String[] row_dist_rating_real={k+" Real",String.valueOf(Precision.round(percent_ro1_of_total,3))
+                        ,String.valueOf(Precision.round(percent_ro2_of_total,3)),
+                        String.valueOf(Precision.round(percent_ro3_of_total,3)),
+                        String.valueOf(Precision.round(percent_ro4_of_total,3)),
+                        String.valueOf(Precision.round(percent_ro5_of_total,3))};
+                String[] row_dist_rating_fake={k+ " Fake",String.valueOf(Precision.round(percent_fo1_of_total,3)),
+                        String.valueOf(Precision.round(percent_fo2_of_total,3)),
+                        String.valueOf(Precision.round(percent_fo3_of_total,3)),
+                        String.valueOf(Precision.round(percent_fo4_of_total,3)),
+                        String.valueOf(Precision.round(percent_fo5_of_total,3))};
                 writer_distrating.writeNext(row_dist_rating_real);
                 writer_distrating.writeNext(row_dist_rating_fake);
 
@@ -590,18 +676,18 @@ public class LabeledDataAnalyser {
                 double percent_realmanyword =total_real==0?0: (double)real_of_manyword/total_real;
 
 
-                String[] row_dist_words_real={k+" Real",String.valueOf(Precision.round(percent_real1word,2))
-                        ,String.valueOf(Precision.round(percent_real2word,2))
-                        ,String.valueOf(Precision.round(percent_real3word,2))
-                        ,String.valueOf(Precision.round(percent_real4word,2))
-                        ,String.valueOf(Precision.round(percent_real5word,2))
-                        ,String.valueOf(Precision.round(percent_real10word,2))
-                        ,String.valueOf(Precision.round(percent_real50word,2))
-                        ,String.valueOf(Precision.round(percent_real100word,2))
-                        ,String.valueOf(Precision.round(percent_real150word,2))
-                        ,String.valueOf(Precision.round(percent_real200word,2))
-                        ,String.valueOf(Precision.round(percent_real250word,2))
-                        ,String.valueOf(Precision.round(percent_realmanyword,2))};
+                String[] row_dist_words_real={k+" Real",String.valueOf(Precision.round(percent_real1word,3))
+                        ,String.valueOf(Precision.round(percent_real2word,3))
+                        ,String.valueOf(Precision.round(percent_real3word,3))
+                        ,String.valueOf(Precision.round(percent_real4word,3))
+                        ,String.valueOf(Precision.round(percent_real5word,3))
+                        ,String.valueOf(Precision.round(percent_real10word,3))
+                        ,String.valueOf(Precision.round(percent_real50word,3))
+                        ,String.valueOf(Precision.round(percent_real100word,3))
+                        ,String.valueOf(Precision.round(percent_real150word,3))
+                        ,String.valueOf(Precision.round(percent_real200word,3))
+                        ,String.valueOf(Precision.round(percent_real250word,3))
+                        ,String.valueOf(Precision.round(percent_realmanyword,3))};
                 writer_distwords.writeNext(row_dist_words_real);
 
                 int fake_of_1word=fake_1word.getOrDefault(k, 0);
@@ -629,18 +715,18 @@ public class LabeledDataAnalyser {
                 int fake_of_manyword=fake_manywords.getOrDefault(k, 0);
                 double percent_fakemanyword =total_fake==0?0: (double)fake_of_manyword/total_fake;
 
-                String[] row_dist_words_fake={k+" Fake",String.valueOf(Precision.round(percent_fake1word,2))
-                        ,String.valueOf(Precision.round(percent_fake2word,2))
-                        ,String.valueOf(Precision.round(percent_fake3word,2))
-                        ,String.valueOf(Precision.round(percent_fake4word,2))
-                        ,String.valueOf(Precision.round(percent_fake5word,2))
-                        ,String.valueOf(Precision.round(percent_fake10word,2))
-                        ,String.valueOf(Precision.round(percent_fake50word,2))
-                        ,String.valueOf(Precision.round(percent_fake100word,2))
-                        ,String.valueOf(Precision.round(percent_fake150word,2))
-                        ,String.valueOf(Precision.round(percent_fake200word,2))
-                        ,String.valueOf(Precision.round(percent_fake250word,2))
-                        ,String.valueOf(Precision.round(percent_fakemanyword,2))};
+                String[] row_dist_words_fake={k+" Fake",String.valueOf(Precision.round(percent_fake1word,3))
+                        ,String.valueOf(Precision.round(percent_fake2word,3))
+                        ,String.valueOf(Precision.round(percent_fake3word,3))
+                        ,String.valueOf(Precision.round(percent_fake4word,3))
+                        ,String.valueOf(Precision.round(percent_fake5word,3))
+                        ,String.valueOf(Precision.round(percent_fake10word,3))
+                        ,String.valueOf(Precision.round(percent_fake50word,3))
+                        ,String.valueOf(Precision.round(percent_fake100word,3))
+                        ,String.valueOf(Precision.round(percent_fake150word,3))
+                        ,String.valueOf(Precision.round(percent_fake200word,3))
+                        ,String.valueOf(Precision.round(percent_fake250word,3))
+                        ,String.valueOf(Precision.round(percent_fakemanyword,3))};
 
                 writer_distwords.writeNext(row_dist_words_fake);
 
@@ -674,7 +760,7 @@ public class LabeledDataAnalyser {
                 int total_of_user = author_total.get(u);
                 int totalfake_of_user=author_fake.getOrDefault(u,0);
                 double perc = (double) totalfake_of_user /total_of_user;
-                String[] row = {u, String.valueOf(total_of_user), String.valueOf(Precision.round(perc, 2))};
+                String[] row = {u, String.valueOf(total_of_user), String.valueOf(Precision.round(perc, 3))};
                 writer.writeNext(row);
                 count++;
                 if (count>=topn)
