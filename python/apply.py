@@ -6,9 +6,10 @@ import pickle
 if __name__ == '__main__':
 
     model=Top2Vec.load(sys.argv[1])
-    topic_sizes, topic_nums = model.get_topic_sizes()
-    for i in topic_nums:
-        topic_words, word_scores, topic_nums = model.get_topics(i)
+    topics = model.get_num_topics()
+    topic_words, word_scores, topic_nums = model.get_topics()
+    for i in range(0, topics):
+        words = topic_words[i]
         model.generate_topic_wordcloud(i)
         print()
 

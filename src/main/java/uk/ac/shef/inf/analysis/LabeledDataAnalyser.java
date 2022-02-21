@@ -17,7 +17,11 @@ import java.util.*;
 /**
  * input should be the labeled .tar.gz files by the ML model
  *
- * output will produce csv files containing basic stats
+ * output will produce
+ * - a csv file containing basic stats
+ * - a csv file of top 1000 most posting users and their fakek %
+ * - a csv file containing distribution of fake/real over ratings
+ * - a csv file containing distribution of fake/real over review length
  */
 public class LabeledDataAnalyser {
 
@@ -55,6 +59,31 @@ public class LabeledDataAnalyser {
         Map<String, Integer> fake_non_verified=new HashMap<>();
         Map<String, Integer> real_non_verified=new HashMap<>();
 
+        Map<String, Integer> fake_1word=new HashMap<>();
+        Map<String, Integer> real_1word=new HashMap<>();
+        Map<String, Integer> fake_2words=new HashMap<>();
+        Map<String, Integer> real_2words=new HashMap<>();
+        Map<String, Integer> fake_3words=new HashMap<>();
+        Map<String, Integer> real_3words=new HashMap<>();
+        Map<String, Integer> fake_4words=new HashMap<>();
+        Map<String, Integer> real_4words=new HashMap<>();
+        Map<String, Integer> fake_5words=new HashMap<>();
+        Map<String, Integer> real_5words=new HashMap<>();
+        Map<String, Integer> fake_10words=new HashMap<>();
+        Map<String, Integer> real_10words=new HashMap<>();
+        Map<String, Integer> fake_50words=new HashMap<>();
+        Map<String, Integer> real_50words=new HashMap<>();
+        Map<String, Integer> fake_100words=new HashMap<>();
+        Map<String, Integer> real_100words=new HashMap<>();
+        Map<String, Integer> fake_150words=new HashMap<>();
+        Map<String, Integer> real_150words=new HashMap<>();
+        Map<String, Integer> fake_200words=new HashMap<>();
+        Map<String, Integer> real_200words=new HashMap<>();
+        Map<String, Integer> fake_250words=new HashMap<>();
+        Map<String, Integer> real_250words=new HashMap<>();
+        Map<String, Integer> fake_manywords=new HashMap<>();
+        Map<String, Integer> real_manywords=new HashMap<>();
+
 
         List<String> files = Util.listFiles(inFolder);
         System.out.format("%s\tProcessing a total of %d files", new Date(), files.size());
@@ -80,19 +109,7 @@ public class LabeledDataAnalyser {
                 BufferedReader br = null;
                 ArchiveEntry entry;
                 entry = ti.getNextEntry();
-                /*
-                Path source = Paths.get("/home/zz/Work/data/amazon/labelled/subset/Books_5.json.27.tar.gz");
-            InputStream fi = Files.newInputStream(source);
-            BufferedInputStream bi = new BufferedInputStream(fi);
-            GzipCompressorInputStream gzi = new GzipCompressorInputStream(bi);
-            TarArchiveInputStream ti = new TarArchiveInputStream(gzi);
-            ArchiveEntry entry;
-            entry = ti.getNextEntry();
-            while (entry != null) {
-                System.out.println(entry.getName());
-                entry=ti.getNextEntry();
-            }
-                 */
+
                 CSVParser parser = new CSVParserBuilder().withStrictQuotes(true).withEscapeChar('\0')
                         .withQuoteChar('"').build();
 
@@ -127,6 +144,8 @@ public class LabeledDataAnalyser {
                             String label = arrays[4];
                             String vrf=arrays[5];
                             String ath =arrays[6];
+                            String review=arrays[2];
+                            int words = review.split("\\s+").length;
 
                             int freq = total.getOrDefault(datasource, 0);
                             total.put(datasource, freq + 1);
@@ -260,6 +279,107 @@ public class LabeledDataAnalyser {
                                 }
                             }
 
+                            //review length
+                            if(words==1){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_1word.getOrDefault(datasource, 0);
+                                    fake_1word.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_1word.getOrDefault(datasource, 0);
+                                    real_1word.put(datasource, fr+1);
+                                }
+                            }else if(words==2){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_2words.getOrDefault(datasource, 0);
+                                    fake_2words.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_2words.getOrDefault(datasource, 0);
+                                    real_2words.put(datasource, fr+1);
+                                }
+                            }else if(words==3){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_3words.getOrDefault(datasource, 0);
+                                    fake_3words.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_3words.getOrDefault(datasource, 0);
+                                    real_3words.put(datasource, fr+1);
+                                }
+                            }else if(words==4){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_4words.getOrDefault(datasource, 0);
+                                    fake_4words.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_4words.getOrDefault(datasource, 0);
+                                    real_4words.put(datasource, fr+1);
+                                }
+                            }else if(words==5){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_5words.getOrDefault(datasource, 0);
+                                    fake_5words.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_5words.getOrDefault(datasource, 0);
+                                    real_5words.put(datasource, fr+1);
+                                }
+                            }else if(words>5 && words<=10){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_10words.getOrDefault(datasource, 0);
+                                    fake_10words.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_10words.getOrDefault(datasource, 0);
+                                    real_10words.put(datasource, fr+1);
+                                }
+                            }else if(words>10 && words<=50){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_50words.getOrDefault(datasource, 0);
+                                    fake_50words.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_50words.getOrDefault(datasource, 0);
+                                    real_50words.put(datasource, fr+1);
+                                }
+                            }else if(words>50 && words<=100){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_100words.getOrDefault(datasource, 0);
+                                    fake_100words.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_100words.getOrDefault(datasource, 0);
+                                    real_100words.put(datasource, fr+1);
+                                }
+                            }else if(words>100 && words<=150){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_150words.getOrDefault(datasource, 0);
+                                    fake_150words.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_150words.getOrDefault(datasource, 0);
+                                    real_150words.put(datasource, fr+1);
+                                }
+                            }else if(words>150 && words<=200){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_200words.getOrDefault(datasource, 0);
+                                    fake_200words.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_200words.getOrDefault(datasource, 0);
+                                    real_200words.put(datasource, fr+1);
+                                }
+                            }else if(words>200 && words<=250){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_250words.getOrDefault(datasource, 0);
+                                    fake_250words.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_250words.getOrDefault(datasource, 0);
+                                    real_250words.put(datasource, fr+1);
+                                }
+                            }else if(words>250){
+                                if (label.equalsIgnoreCase("cg")) {
+                                    int fr = fake_manywords.getOrDefault(datasource, 0);
+                                    fake_manywords.put(datasource, fr+1);
+                                }else{
+                                    int fr = real_manywords.getOrDefault(datasource, 0);
+                                    real_manywords.put(datasource, fr+1);
+                                }
+                            }
+
+
+
                             listIndex++;
                         }
                     }catch (Exception ioe){
@@ -278,6 +398,8 @@ public class LabeledDataAnalyser {
 
         System.out.format("\n%s\tAll completed, saving data", new Date());
         File file = new File(outFolder+"/stats.csv");
+        File file_dist_rating = new File(outFolder+"/stats_dist_rating.csv");
+        File file_dist_words = new File(outFolder+"/stats_dist_words.csv");
         try {
             // create FileWriter object with file as parameter
             FileWriter outputfile = new FileWriter(file);
@@ -303,10 +425,40 @@ public class LabeledDataAnalyser {
             };
             writer.writeNext(header);
 
-            List<String> keys = new ArrayList<>(total.keySet());
-            Collections.sort(keys);
+            // create FileWriter object with file as parameter
+            FileWriter outputfile_distrating = new FileWriter(file_dist_rating);
+            // create CSVWriter object filewriter object as parameter
+            CSVWriter writer_distrating = new CSVWriter(outputfile_distrating, ',',
+                    CSVWriter.DEFAULT_QUOTE_CHARACTER,
+                    CSVWriter.DEFAULT_ESCAPE_CHARACTER,
+                    CSVWriter.DEFAULT_LINE_END);
 
+            // adding header to csv
+            String[] header_distrating = { "", "1", "2",
+                    "3","4","5"
+            };
+            writer_distrating.writeNext(header_distrating);
+
+            // create FileWriter object with file as parameter
+            FileWriter outputfile_distwords = new FileWriter(file_dist_words);
+            // create CSVWriter object filewriter object as parameter
+            CSVWriter writer_distwords = new CSVWriter(outputfile_distwords, ',',
+                    CSVWriter.DEFAULT_QUOTE_CHARACTER,
+                    CSVWriter.DEFAULT_ESCAPE_CHARACTER,
+                    CSVWriter.DEFAULT_LINE_END);
+
+            // adding header to csv
+            String[] header_distwords = { "", "1", "2",
+                    "3","4","5","5-10","10-50","50-100","100-150","150-200","200-250","Over 250"
+            };
+            writer_distwords.writeNext(header_distwords);
+
+            List<String> keys = new ArrayList<>(total.keySet());
+            keys.sort((s, t1) -> total.get(t1).compareTo(total.get(s)));
+
+            //key is the category
             for (String k : keys){
+                //general stats
                 int total_freq =total.get(k);
                 int total_fake = fake.getOrDefault(k, 0);
                 double percent_fake = (double) total_fake /total_freq;
@@ -370,7 +522,7 @@ public class LabeledDataAnalyser {
                         String.valueOf(Precision.round(percent_fake,2)), String.valueOf(Precision.round(percent_real,2)),
                         String.valueOf(Precision.round(percent_verified,2)), String.valueOf(Precision.round(percent_nonverified,2)),
                         String.valueOf(Precision.round(percent_rating0,2)),
-                        String.valueOf(Precision.round(percent_rating2,2)),
+                        String.valueOf(Precision.round(percent_rating1,2)),
                         String.valueOf(Precision.round(percent_rating2,2)),
                         String.valueOf(Precision.round(percent_rating3,2)),
                         String.valueOf(Precision.round(percent_rating4,2)),
@@ -378,16 +530,125 @@ public class LabeledDataAnalyser {
                         String.valueOf(Precision.round(percent_fov,2)),String.valueOf(Precision.round(percent_rov,2)),
                         String.valueOf(Precision.round(percent_fonv,2)),String.valueOf(Precision.round(percent_ronv,2)),
                         String.valueOf(Precision.round(percent_fo0,2)),String.valueOf(Precision.round(percent_ro0,2)),
-                        String.valueOf(Precision.round(percent_fo2,2)),String.valueOf(Precision.round(percent_ro2,2)),
+                        String.valueOf(Precision.round(percent_fo1,2)),String.valueOf(Precision.round(percent_ro1,2)),
                         String.valueOf(Precision.round(percent_fo2,2)),String.valueOf(Precision.round(percent_ro2,2)),
                         String.valueOf(Precision.round(percent_fo3,2)),String.valueOf(Precision.round(percent_ro3,2)),
                         String.valueOf(Precision.round(percent_fo4,2)),String.valueOf(Precision.round(percent_ro4,2)),
                         String.valueOf(Precision.round(percent_fo5,2)),String.valueOf(Precision.round(percent_ro5,2))
                     };
                 writer.writeNext(row);
+
+                //dist rating stats
+                double percent_fo1_of_total =total_fake==0?0: (double)fake_of_1rating/total_fake;
+                double percent_ro1_of_total =total_real==0?0: (double)real_of_1rating/total_real;
+                double percent_fo2_of_total =total_fake==0?0: (double)fake_of_2rating/total_fake;
+                double percent_ro2_of_total =total_real==0?0: (double)real_of_2rating/total_real;
+                double percent_fo3_of_total =total_fake==0?0: (double)fake_of_3rating/total_fake;
+                double percent_ro3_of_total =total_real==0?0: (double)real_of_3rating/total_real;
+                double percent_fo4_of_total =total_fake==0?0: (double)fake_of_4rating/total_fake;
+                double percent_ro4_of_total =total_real==0?0: (double)real_of_4rating/total_real;
+                double percent_fo5_of_total =total_fake==0?0: (double)fake_of_5rating/total_fake;
+                double percent_ro5_of_total =total_real==0?0: (double)real_of_5rating/total_real;
+
+                String[] row_dist_rating_real={k+" Real",String.valueOf((int)percent_ro1_of_total)
+                        ,String.valueOf(Precision.round(percent_ro2_of_total,2)),
+                        String.valueOf(Precision.round(percent_ro3_of_total,2)),
+                        String.valueOf(Precision.round(percent_ro4_of_total,2)),
+                        String.valueOf(Precision.round(percent_ro5_of_total,2))};
+                String[] row_dist_rating_fake={k+ " Fake",String.valueOf(Precision.round(percent_fo1_of_total,2)),
+                        String.valueOf(Precision.round(percent_fo2_of_total,2)),
+                        String.valueOf(Precision.round(percent_fo3_of_total,2)),
+                        String.valueOf(Precision.round(percent_fo4_of_total,2)),
+                        String.valueOf(Precision.round(percent_fo5_of_total,2))};
+                writer_distrating.writeNext(row_dist_rating_real);
+                writer_distrating.writeNext(row_dist_rating_fake);
+
+                //dist words stats
+                int real_of_1word=real_1word.getOrDefault(k, 0);
+                double percent_real1word =total_real==0?0: (double)real_of_1word/total_real;
+                int real_of_2word=real_2words.getOrDefault(k, 0);
+                double percent_real2word =total_real==0?0: (double)real_of_2word/total_real;
+                int real_of_3word=real_3words.getOrDefault(k, 0);
+                double percent_real3word =total_real==0?0: (double)real_of_3word/total_real;
+                int real_of_4word=real_4words.getOrDefault(k, 0);
+                double percent_real4word =total_real==0?0: (double)real_of_4word/total_real;
+                int real_of_5word=real_5words.getOrDefault(k, 0);
+                double percent_real5word =total_real==0?0: (double)real_of_5word/total_real;
+                int real_of_10word=real_10words.getOrDefault(k, 0);
+                double percent_real10word =total_real==0?0: (double)real_of_10word/total_real;
+                int real_of_50word=real_50words.getOrDefault(k, 0);
+                double percent_real50word =total_real==0?0: (double)real_of_50word/total_real;
+                int real_of_100word=real_100words.getOrDefault(k, 0);
+                double percent_real100word =total_real==0?0: (double)real_of_100word/total_real;
+                int real_of_150word=real_150words.getOrDefault(k, 0);
+                double percent_real150word =total_real==0?0: (double)real_of_150word/total_real;
+                int real_of_200word=real_200words.getOrDefault(k, 0);
+                double percent_real200word =total_real==0?0: (double)real_of_200word/total_real;
+                int real_of_250word=real_250words.getOrDefault(k, 0);
+                double percent_real250word =total_real==0?0: (double)real_of_250word/total_real;
+                int real_of_manyword=real_manywords.getOrDefault(k, 0);
+                double percent_realmanyword =total_real==0?0: (double)real_of_manyword/total_real;
+
+
+                String[] row_dist_words_real={k+" Real",String.valueOf(Precision.round(percent_real1word,2))
+                        ,String.valueOf(Precision.round(percent_real2word,2))
+                        ,String.valueOf(Precision.round(percent_real3word,2))
+                        ,String.valueOf(Precision.round(percent_real4word,2))
+                        ,String.valueOf(Precision.round(percent_real5word,2))
+                        ,String.valueOf(Precision.round(percent_real10word,2))
+                        ,String.valueOf(Precision.round(percent_real50word,2))
+                        ,String.valueOf(Precision.round(percent_real100word,2))
+                        ,String.valueOf(Precision.round(percent_real150word,2))
+                        ,String.valueOf(Precision.round(percent_real200word,2))
+                        ,String.valueOf(Precision.round(percent_real250word,2))
+                        ,String.valueOf(Precision.round(percent_realmanyword,2))};
+                writer_distwords.writeNext(row_dist_words_real);
+
+                int fake_of_1word=fake_1word.getOrDefault(k, 0);
+                double percent_fake1word =total_fake==0?0: (double)fake_of_1word/total_fake;
+                int fake_of_2word=fake_2words.getOrDefault(k, 0);
+                double percent_fake2word =total_fake==0?0: (double)fake_of_2word/total_fake;
+                int fake_of_3word=fake_3words.getOrDefault(k, 0);
+                double percent_fake3word =total_fake==0?0: (double)fake_of_3word/total_fake;
+                int fake_of_4word=fake_4words.getOrDefault(k, 0);
+                double percent_fake4word =total_fake==0?0: (double)fake_of_4word/total_fake;
+                int fake_of_5word=fake_5words.getOrDefault(k, 0);
+                double percent_fake5word =total_fake==0?0: (double)fake_of_5word/total_fake;
+                int fake_of_10word=fake_10words.getOrDefault(k, 0);
+                double percent_fake10word =total_fake==0?0: (double)fake_of_10word/total_fake;
+                int fake_of_50word=fake_50words.getOrDefault(k, 0);
+                double percent_fake50word =total_fake==0?0: (double)fake_of_50word/total_fake;
+                int fake_of_100word=fake_100words.getOrDefault(k, 0);
+                double percent_fake100word =total_fake==0?0: (double)fake_of_100word/total_fake;
+                int fake_of_150word=fake_150words.getOrDefault(k, 0);
+                double percent_fake150word =total_fake==0?0: (double)fake_of_150word/total_fake;
+                int fake_of_200word=fake_200words.getOrDefault(k, 0);
+                double percent_fake200word =total_fake==0?0: (double)fake_of_200word/total_fake;
+                int fake_of_250word=fake_250words.getOrDefault(k, 0);
+                double percent_fake250word =total_fake==0?0: (double)fake_of_250word/total_fake;
+                int fake_of_manyword=fake_manywords.getOrDefault(k, 0);
+                double percent_fakemanyword =total_fake==0?0: (double)fake_of_manyword/total_fake;
+
+                String[] row_dist_words_fake={k+" Fake",String.valueOf(Precision.round(percent_fake1word,2))
+                        ,String.valueOf(Precision.round(percent_fake2word,2))
+                        ,String.valueOf(Precision.round(percent_fake3word,2))
+                        ,String.valueOf(Precision.round(percent_fake4word,2))
+                        ,String.valueOf(Precision.round(percent_fake5word,2))
+                        ,String.valueOf(Precision.round(percent_fake10word,2))
+                        ,String.valueOf(Precision.round(percent_fake50word,2))
+                        ,String.valueOf(Precision.round(percent_fake100word,2))
+                        ,String.valueOf(Precision.round(percent_fake150word,2))
+                        ,String.valueOf(Precision.round(percent_fake200word,2))
+                        ,String.valueOf(Precision.round(percent_fake250word,2))
+                        ,String.valueOf(Precision.round(percent_fakemanyword,2))};
+
+                writer_distwords.writeNext(row_dist_words_fake);
+
             }
             // closing writer connection
             writer.close();
+            writer_distrating.close();
+            writer_distwords.close();
         }
         catch (IOException e) {
             // TODO Auto-generated catch block
