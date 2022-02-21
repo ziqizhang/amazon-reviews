@@ -44,12 +44,15 @@ public class LabeledDataAnalyser {
     public JSONObject prepareJSONStringBoxplot(DescriptiveStatistics stats, String label){
         JSONObject boxplot_stats = new JSONObject();
         boxplot_stats.put("mean", Precision.round(stats.getMean(),1));
-        boxplot_stats.put("med", stats.getPercentile(0.5));
-        boxplot_stats.put("q1", stats.getPercentile(0.25));
-        boxplot_stats.put("q3", stats.getPercentile(0.75));
-        boxplot_stats.put("wishhi", stats.getMax());
-        boxplot_stats.put("wishlo",stats.getMin());
+        boxplot_stats.put("med", stats.getPercentile(50));
+        boxplot_stats.put("q1", stats.getPercentile(25));
+        boxplot_stats.put("q3", stats.getPercentile(75));
+        boxplot_stats.put("whishi", stats.getMax());
+        boxplot_stats.put("whislo",stats.getMin());
         boxplot_stats.put("label",label);
+        boxplot_stats.put("stdev",stats.getStandardDeviation());
+        boxplot_stats.put("variance",stats.getVariance());
+
         return boxplot_stats;
     }
 
